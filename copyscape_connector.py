@@ -1,6 +1,7 @@
 import requests as r
 import urllib
 import xml.etree.ElementTree as ET
+import pandas as pd
 
 
 def output_formatted_xml(resp):
@@ -15,18 +16,28 @@ def parse_xml_report_response(resp):
     output_dict = {}
 
     for element in xml_tree.iter('result'):
-        print("checking an item")
 
         for item in element.iter('result'):
             output_dict[item.find('index').text] = {'url': item.find('url').text,
                                                     'title': item.find('title').text,
-                                                    'min_matched_words': item.find('minwordsmatched').text}
-    print("done looping")
+                                                    'min_matched_words': item.find('minwordsmatched').text,
+                                                    'viewurl': item.find('viewurl').text,
+                                                    'textsnippet': item.find('textsnippet').text}
 
     return output_dict
 
 
-class CopyScape_report():
+def process_list_of_urls(url_list):
+
+    output_df = pd.DataFrame()
+
+    for url in url_list:
+        output_df = CopyScapeReport().check_url_for_copies(url).append(output_df)
+
+    return output_df
+
+
+class CopyScapeReport:
 
     def __init__(self):
         self.end_point = "https://www.copyscape.com/api/"
@@ -46,11 +57,9 @@ class CopyScape_report():
         response = r.get(self.end_point,
                          params=self.parameters)
 
-        import pandas as pd
-
         result = parse_xml_report_response(response)
         df = pd.DataFrame(result.values(),
                           index=result.keys())
-        df['query'] = url
+        df['query_url'] = url
 
         return df
