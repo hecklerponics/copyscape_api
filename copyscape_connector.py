@@ -13,20 +13,14 @@ def parse_xml_report_response(resp):
     xml_tree = ET.fromstring(resp.text)
 
     output_dict = {}
-    print("Set empty dict.")
 
-    for element in xml_tree.findall('response').iter():
+    for element in xml_tree.iter('result'):
         print("checking an item")
-        print(xml_tree.find('query').text)
 
-        for item in element.iter():
-            output_dict[xml_tree.find('query').text] = {'url': item.find('url').text,
+        for item in element.iter('result'):
+            output_dict[item.find('index').text] = {'url': item.find('url').text,
                                                     'title': item.find('title').text,
                                                     'min_matched_words': item.find('minwordsmatched').text}
-
-        print(output_dict)
-        print(element)
-
     print("done looping")
 
     return output_dict
@@ -52,4 +46,11 @@ class CopyScape_report():
         response = r.get(self.end_point,
                          params=self.parameters)
 
-        return response
+        import pandas as pd
+
+        result = parse_xml_report_response(response)
+        df = pd.DataFrame(result.values(),
+                          index=result.keys())
+        df['query'] = url
+
+        return df
