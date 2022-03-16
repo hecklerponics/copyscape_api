@@ -81,11 +81,14 @@ def parse_xml_report_response(resp):
     for element in xml_tree.iter('result'):
 
         for item in element.iter('result'):
-            output_dict[item.find('index').text] = {'url': item.find('url').text,
+            try:
+                output_dict[item.find('index').text] = {'url': item.find('url').text,
                                                     'title': item.find('title').text,
                                                     'min_matched_words': item.find('minwordsmatched').text,
                                                     'viewurl': item.find('viewurl').text,
                                                     'textsnippet': item.find('textsnippet').text}
+            except AttributeError:
+                pass
 
     return output_dict
 
@@ -111,11 +114,14 @@ def create_df_from_results_dict(response, query_url):
     """
     Takes results response and the query URL and returns a DF.
     """
+    try:
+        result = parse_xml_report_response(response)
+        df = pd.DataFrame(result.values(),
+                          index=result.keys())
 
-    result = parse_xml_report_response(response)
-    df = pd.DataFrame(result.values(),
-                      index=result.keys())
+        df['query_url'] = query_url
 
-    df['query_url'] = query_url
+    except AttributeError:
+        pass
 
     return df
